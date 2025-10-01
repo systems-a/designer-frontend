@@ -8,6 +8,7 @@ import {
 import DesignMainSection from './Main/Main';
 import DesignLeftSection from './Left/Left';
 import DesignRightSection from './Right/Right';
+import Header from '../../components/Header/Header';
 
 function Design() {
   const pageRef = useRef();
@@ -104,46 +105,50 @@ function Design() {
 
   return (
     <div className={styles['Design']} ref={pageRef}>
-      <DesignLeftSection
-        currentColumnId={currentColumnId}
-        currentColumnParentId={currentColumnParentId}
-        currentPageIndex={currentPageIndex}
-        currentRowId={currentRowId}
-        doc={design}
-        documentPageRef={pageRef}
-        setCurrentColumnId={setCurrentColumnId}
-        setCurrentColumnParentId={setCurrentColumnParentId}
-        setCurrentComponentId={setCurrentComponentId}
-        setCurrentPageIndex={setCurrentPageIndex}
-        setCurrentRowId={setCurrentRowId}
-        setDoc={setDesign}
-        updateDoc={updateDocument}
-      />
+      <Header />
 
-      <DesignMainSection
-        activeComponentClass={styles['Design__Active_Component']}
-        currentPageIndex={currentPageIndex}
-        doc={design}
-        resetSelections={resetSelections}
-        setCurrentColumn={setCurrentColumn}
-        setCurrentColumnId={setCurrentColumnId}
-        setCurrentComponentId={setCurrentComponentId}
-        setCurrentRow={setCurrentRow}
-        setCurrentRowId={setCurrentRowId}
-        setDoc={setDesign}
-      />
+      <main>
+        <DesignLeftSection
+          currentColumnId={currentColumnId}
+          currentColumnParentId={currentColumnParentId}
+          currentPageIndex={currentPageIndex}
+          currentRowId={currentRowId}
+          doc={design}
+          documentPageRef={pageRef}
+          setCurrentColumnId={setCurrentColumnId}
+          setCurrentColumnParentId={setCurrentColumnParentId}
+          setCurrentComponentId={setCurrentComponentId}
+          setCurrentPageIndex={setCurrentPageIndex}
+          setCurrentRowId={setCurrentRowId}
+          setDoc={setDesign}
+          updateDoc={updateDocument}
+        />
 
-      <DesignRightSection
-        currentComponentId={currentComponentId}
-        currentColumnId={currentColumnId}
-        currentPageIndex={currentPageIndex}
-        currentRowId={currentRowId}
-        doc={design}
-        setCurrentColumnId={setCurrentColumnId}
-        setCurrentComponentId={setCurrentComponentId}
-        setCurrentRowId={setCurrentRowId}
-        setDoc={setDesign}
-      />
+        <DesignMainSection
+          activeComponentClass={styles['Design__Active_Component']}
+          currentPageIndex={currentPageIndex}
+          doc={design}
+          resetSelections={resetSelections}
+          setCurrentColumn={setCurrentColumn}
+          setCurrentColumnId={setCurrentColumnId}
+          setCurrentComponentId={setCurrentComponentId}
+          setCurrentRow={setCurrentRow}
+          setCurrentRowId={setCurrentRowId}
+          setDoc={setDesign}
+        />
+
+        <DesignRightSection
+          currentComponentId={currentComponentId}
+          currentColumnId={currentColumnId}
+          currentPageIndex={currentPageIndex}
+          currentRowId={currentRowId}
+          doc={design}
+          setCurrentColumnId={setCurrentColumnId}
+          setCurrentComponentId={setCurrentComponentId}
+          setCurrentRowId={setCurrentRowId}
+          setDoc={setDesign}
+        />
+      </main>
     </div>
   )
 }

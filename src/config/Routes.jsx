@@ -14,11 +14,9 @@ export default function Config () {
 
   return (
     <Routes>
-      <Route path="/" element={<Homepage />}>
-        <Route path="/design" element={<Design />} />
-      </Route>
-
+      <Route path="/design" element={<Design />} />
       <Route path="/login" element={<Login />} />
+      <Route path="/" element={<Homepage />} />
     </Routes>
   )
 }

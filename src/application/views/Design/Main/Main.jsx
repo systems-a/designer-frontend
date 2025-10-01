@@ -167,26 +167,24 @@ function NewDesignMainSection({
 
   return (
     <div className={styles['NewDocumentDesignSection__Pages']}>
-      <div className={styles['NewDocumentDesignSection__Container']} id="pageContainer">
-        {
-          page ? (
-            <div
-              className={styles['NewDocumentDesignSection__Page']}
-              style={{
-                width: page.autoLayout ? 'max-content' : `${page.width / 12}em`,
-                height: page.autoLayout ? 'max-content' : `${page.height / 12}em`
-              }}
-              id="page"
-            >
-              {
-                page.autoLayout ?
-                  getRowComponents(doc, setDoc, currentPageIndex, page.rows, onComponentBlur, onComponentFocus, onComponentKeydown, setCurrentRow, setCurrentColumn, styles)
-                  : getPageComponents(doc, setDoc, currentPageIndex, onComponentBlur, onComponentFocus, onComponentKeydown)
-              }
-            </div>
-          ) : null
-        }
-      </div>
+      {
+        page ? (
+          <div
+            className={styles['NewDocumentDesignSection__Page']}
+            style={{
+              width: page.autoLayout ? 'max-content' : `${page.width / 12}em`,
+              height: page.autoLayout ? 'max-content' : `${page.height / 12}em`
+            }}
+            id="page"
+          >
+            {
+              page.autoLayout ?
+                getRowComponents(doc, setDoc, currentPageIndex, page.rows, onComponentBlur, onComponentFocus, onComponentKeydown, setCurrentRow, setCurrentColumn, styles)
+                : getPageComponents(doc, setDoc, currentPageIndex, onComponentBlur, onComponentFocus, onComponentKeydown)
+            }
+          </div>
+        ) : null
+      }
     </div>
   )
 }

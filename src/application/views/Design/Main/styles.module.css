@@ -1,13 +1,7 @@
 .NewDocumentDesignSection__Pages {
   height: 100%;
   overflow: auto;
-}
-
-.NewDocumentDesignSection__Container {
   background-color: var(--primary-color);
-  height: 100%;
-  width: 100%;
-  overflow: auto;
 }
 
 .NewDocumentDesignSection__Page {

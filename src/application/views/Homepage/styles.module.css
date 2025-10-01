@@ -1,0 +1,56 @@
+.Homepage {
+  height: 100vh;
+  background-color: var(--secondary-color);
+  overflow: auto;
+}
+
+.Homepage main {
+}
+
+.Homepage__Hero {
+  background-color: var(--tertiary-color);
+  padding: 5em 3em;
+  --text-color: white;
+}
+
+.Homepage__Hero img {
+  width: 5em;
+  height: 5em;
+  border-radius: 50em;
+  margin-bottom: 2em;
+  border: 0.25em solid var(--secondary-color);
+}
+
+.Homepage__Hero h1 {
+  color: var(--secondary-color);
+  font-size: 4em;
+  line-height: 1.2;
+}
+
+.Homepage__Hero input {
+  --text-color: #222;
+  width: 100%;
+  padding: 1em;
+  margin: 2em 0 0;
+  font-size: 1.4em;
+}
+
+.Homepage__Design_Options ul {
+  padding: 2em;
+  display: grid;
+  grid-auto-columns: max-content;
+}
+
+.Homepage__Design_Options ul li a {
+  padding: 1em;
+  display: grid;
+  border-radius: 1em;
+  --heading-color: var(--tertiary-color);
+}
+
+.Homepage__Design_Options_White {
+  width: 25em;
+  height: 12em;
+  background-color: #eee;
+  margin-bottom: 1em;
+}

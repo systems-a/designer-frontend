@@ -1,5 +1,5 @@
-.Design {
-  height: calc(100vh - var(--header-top-height) - var(--header-bottom-height));
+.Design main {
+  height: calc(100vh - var(--header-height));
   background-color: var(--page-bg);
   display: grid;
   grid-template-columns: max-content 1fr max-content;

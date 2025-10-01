@@ -23,7 +23,10 @@
   --primary-color: #1976d2;
   --primary-color: #333;
   --border-color: #e7e1d555;
-  --logo-color: #e7e1d5;
+  --secondary-color: #e7e1d5;
+  --tertiary-color: #16463f;
+  --accent-color: #eac1c6;
+  --color-4: #6d7179;
 
   --log-out: #f76c6c;
   --danger-color: #ff4d4f;
@@ -32,8 +35,7 @@
   --heading-color: #111827;
   --text-color: #4b5563;
 
-  --header-top-height: 3em;
-  --header-bottom-height: 3em;
+  --header-height: 3.5em;
 
   font-size: 10px;
 }
