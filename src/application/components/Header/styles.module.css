@@ -1,0 +1,40 @@
+.Header {
+  position: sticky;
+  top: 0;
+  left: 0;
+  z-index: 3;
+}
+
+.Header__Top {
+  height: var(--header-top-height);
+  background-color: var(--primary-color);
+  display: grid;
+  padding: 0 1em;
+  align-items: center;
+}
+
+.Header__Logo h2 {
+  color: white;
+  color: var(--logo-color);
+}
+
+.Header nav {
+  padding: 0 1em;
+  border-bottom: 0.01em solid var(--border-color);
+  height: var(--header-bottom-height);
+  display: grid;
+  align-items: center;
+  background-color: var(--primary-color);
+}
+
+.Header nav ul {
+  display: grid;
+  grid-auto-flow: column;
+  justify-content: start;
+  gap: 1em;
+}
+
+.Header__Active_Link {
+  font-weight: bold;
+  color: white;
+}

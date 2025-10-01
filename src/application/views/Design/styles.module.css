@@ -1,0 +1,13 @@
+.Design {
+  height: calc(100vh - var(--header-top-height) - var(--header-bottom-height));
+  background-color: var(--page-bg);
+  display: grid;
+  grid-template-columns: max-content 1fr max-content;
+  align-items: start;
+}
+
+.Design__Active_Row,
+.Design__Active_Column,
+.Design__Active_Component {
+  outline: 0.1em dotted #000;
+}

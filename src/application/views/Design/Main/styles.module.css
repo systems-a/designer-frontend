@@ -1,0 +1,62 @@
+.NewDocumentDesignSection__Pages {
+  height: 100%;
+  overflow: auto;
+}
+
+.NewDocumentDesignSection__Container {
+  background-color: var(--primary-color);
+  height: 100%;
+  width: 100%;
+  overflow: auto;
+}
+
+.NewDocumentDesignSection__Page {
+  margin: 10em;
+  background-color: white;
+  padding: 2em;
+  display: grid;
+  align-content: start;
+  justify-items: start;
+  gap: 2em;
+  overflow: hidden;
+  position: relative;
+  user-select: text;
+}
+
+.NewDocumentDesignSection__Row {
+  --border-color: #ccc;
+  border: 0.2em dashed var(--border-color);
+  width: 100%;
+  display: grid;
+  justify-content: start;
+  cursor: pointer;
+  overflow: hidden;
+}
+
+.NewDocumentDesignSection__Row_Columns {
+  display: grid;
+  grid-auto-flow: column;
+}
+
+.NewDocumentDesignSection__Row_Options button,
+.NewDocumentDesignSection__Column_Options button,
+.NewDocumentDesignSection__Component_Options button {
+  border: none;
+  padding: 0.25em;
+  cursor: default;
+}
+
+.NewDocumentDesignSection__Column {
+  --border-color: #ccc;
+  border: 0.2em dashed var(--border-color);
+  width: max-content;
+  display: grid;
+  gap: 1em;
+  cursor: pointer;
+}
+
+.NewDocumentDesignSection__Row_Components {
+  position: relative;
+  cursor: pointer;
+  align-content: start;
+}

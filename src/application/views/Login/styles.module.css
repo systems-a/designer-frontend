@@ -1,0 +1,42 @@
+.Login {
+  display: grid;
+  min-height: 120vh;
+  grid-template-rows: max-content 1fr max-content;
+}
+
+.Login__Form_Section {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.Login__Form_Section h1 {
+  font-weight: 300;
+  font-size: 2rem;
+  margin-bottom: 1rem;
+}
+
+.Login__Form_Section form {
+  display: grid;
+  align-content: start;
+  gap: 0.5rem;
+  padding: 6rem 2rem;
+  border-right: 1px solid #eee;
+  height: 100%;
+}
+
+.Login__Form_Section button {
+  justify-self: start;
+  background-color: #fff;
+  color: #555;
+  font-size: 0.875rem;
+  margin-top: 1rem;
+  padding: 0.5rem 1.5rem;
+  border: 1px solid #888;
+}
+
+@media (max-width: 650px) {
+  .Login__Form_Section {
+    grid-template-columns: 1fr;
+  }
+}
