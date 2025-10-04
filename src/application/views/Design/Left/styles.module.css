@@ -6,7 +6,6 @@
   background-color: var(--primary-color);
   border-right: 0.01em solid var(--border-color);
   overflow-y: scroll;
-  scrollbar-width: none;
   height: 100%;
 
   position: sticky;
@@ -66,7 +65,8 @@
   display: grid;
   grid-template-columns: 1fr max-content;
   align-items: center;
-  padding: 0.5em 0.75em;
+  padding: 0 0.75em;
+  height: 2.5em;
   border-radius: 0.25em;
 }
 
@@ -74,7 +74,7 @@
   background-color: var(--border-color);
 }
 
-.NewDocumentLeftSection__Controls_Pages ul .NewDocumentLeftSection__Controls_Pages_Current_Page button {
+.NewDocumentLeftSection__Controls_Pages ul .NewDocumentLeftSection__Controls_Pages_Current_Page a {
   font-weight: bold;
 }
 
@@ -126,7 +126,6 @@
   font-size: 1em;
   background: none;
   border: none;
-  padding: 0.5em 1em;
   gap: 0.5em;
   grid-template-columns: 2em 1fr;
   justify-content: start;
@@ -164,4 +163,10 @@
   border: none;
   text-align: center;
   width: 100%;
+}
+
+.NewDocumentLeftSection__Controls .NewDocumentLeftSection__Controls_Pages_Current_Page_Add_Component_Button {
+  padding: 0;
+  justify-self: end;
+  background: none;
 }

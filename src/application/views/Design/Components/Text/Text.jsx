@@ -1,27 +1,36 @@
-import { updateComponentProperty } from '../../lib/components';
+import { getComponentProperty, getComponentPropertyCategory, updateComponentProperty } from '../../../../lib/components';
 import styles from './styles.module.css'
 
 function TextComponent({
   columnId,
   component,
-  doc,
+  activeDesign,
   onBlurCallback,
   onFocusCallback,
+  onMouseDownCallback,
   pageIndex,
   rowId,
-  setDoc,
+  addDesignState,
+  scaleFactor,
 }) {
-  const factor = 12;
-
   const onBlur = (e) => {
-    setDoc(updateComponentProperty(
-      doc,
+    addDesignState(updateComponentProperty(
+      activeDesign,
       pageIndex,
       rowId,
       columnId,
       component.id,
-      'textContent',
-      { ...component.properties.textContent, value: e.target.innerHTML }
+      'text',
+      {
+        ...getComponentPropertyCategory(activeDesign, pageIndex, rowId, columnId, component.id, 'text'),
+        properties: {
+          ...getComponentPropertyCategory(activeDesign, pageIndex, rowId, columnId, component.id, 'text').properties,
+          textContent: {
+            ...getComponentProperty(activeDesign, pageIndex, rowId, columnId, component.id, 'text', 'textContent'),
+            value: e.target.innerHTML,
+          }
+        }
+      }
     ))
 
     onBlurCallback(e);
@@ -31,39 +40,45 @@ function TextComponent({
     onFocusCallback(e);
   }
 
+  const onMouseDown = (e) => {
+    onMouseDownCallback(e);
+  }
+
   return (
     <div
       className={styles['Text']}
       contentEditable
       dangerouslySetInnerHTML={{
-        __html: component.properties.textContent ?
-        component.properties.textContent.value :
+        __html: component.properties.text.properties.textContent ?
+        component.properties.text.properties.textContent.value :
         'Click to edit'
       }}
+      id={component.id}
       onBlur={onBlur}
       onFocus={onFocus}
+      onMouseDown={onMouseDown}
       style={{
-        background: `${component.properties.fill?.value}`,
-        borderColor: `${component.properties.strokeColor?.value}`,
+        background: component.properties.color.properties.fill ? component.properties.color.properties.fill.value : '#444',
+        borderColor: `${component.properties.stroke.properties.strokeColor?.value}`,
         borderStyle: 'solid',
-        borderWidth: `${component.properties.strokeWidth?.value / factor}em`,
-        boxShadow: `${`
-          ${component.properties.shadowOffsetX?.value}px ${component.properties.shadowOffsetY?.value}px ${component.properties.shadowBlur?.value}px ${component.properties.shadowSpread?.value}px ${component.properties.shadowColor?.value}
-        `}`,
-        color: component.properties.color?.value,
-        cursor: 'text',
-        height: `${component.properties.height?.value}`,
-        left: `${component.properties.left?.value / factor}em`,
-        opacity: `${component.properties.opacity?.value}`,
-        padding: `${component.properties.paddingTop?.value / factor}em ${component.properties.paddingRight?.value / factor}em ${component.properties.paddingBottom?.value / factor}em ${component.properties.paddingLeft?.value / factor}em`,
-        position: (rowId || columnId) ? 'relative' : 'absolute',
-        textShadow: `${parseInt(component.properties.textShadowWidth?.value) > 0 ? `
-          ${component.properties.textShadowWidth?.value / factor}em ${component.properties.textShadowHorizontalOffset?.value / factor}em ${component.properties.textShadowVerticalOffset?.value / factor}em ${component.properties.textShadowColor?.value}
+        borderWidth: `${component.properties.stroke.properties.strokeWidth?.value / scaleFactor}em`,
+        boxShadow: `${component.properties.shadow ? `
+          ${component.properties.shadow.properties.shadowOffsetX?.value}px ${component.properties.shadow.properties.shadowOffsetY?.value}px ${component.properties.shadow.properties.shadowBlur?.value}px ${component.properties.shadow.properties.shadowSpread?.value}px ${component.properties.shadow.properties.shadowColor?.value}
         ` : ''}`,
-        top: `${component.properties.top?.value / factor}em`,
+        color: component.properties.color.properties.color ? component.properties.color.properties.color.value : '#444',
+        cursor: 'text',
+        height: `${component.properties.dimensions.properties.height?.value}`,
+        left: `${component.properties.position.properties.left?.value / scaleFactor}em`,
+        opacity: `${component.properties.opacity.properties.value.value}`,
+        padding: `${component.properties.spacing.properties.paddingTop?.value / scaleFactor}em ${component.properties.spacing.properties.paddingRight?.value / scaleFactor}em ${component.properties.spacing.properties.paddingBottom?.value / scaleFactor}em ${component.properties.spacing.properties.paddingLeft?.value / scaleFactor}em`,
+        position: (rowId || columnId) ? 'relative' : 'absolute',
+        textShadow: `${parseInt(component.properties.textShadow.properties.textShadowWidth?.value) > 0 ? `
+          ${component.properties.textShadow.properties.textShadowWidth?.value / scaleFactor}em ${component.properties.textShadow.properties.textShadowHorizontalOffset?.value / scaleFactor}em ${component.properties.textShadow.properties.textShadowVerticalOffset?.value / scaleFactor}em ${component.properties.textShadow.properties.textShadowColor?.value}
+        ` : ''}`,
+        top: `${component.properties.position.properties.top?.value / scaleFactor}em`,
         whiteSpace: 'preserve',
-        width: `${component.properties.width?.value}`,
-        zIndex: `${component.properties.zIndex?.value}`,
+        width: `${component.properties.dimensions.properties.width?.value / scaleFactor}em`,
+        zIndex: `${component.properties.position.properties.zIndex?.value}`,
       }}
       tabIndex={0}
     />

@@ -7,24 +7,24 @@
 .NewDocumentDesignSection__Page {
   margin: 10em;
   background-color: white;
-  padding: 2em;
   display: grid;
   align-content: start;
   justify-items: start;
-  gap: 2em;
   overflow: hidden;
   position: relative;
   user-select: text;
+  outline: none;
 }
 
 .NewDocumentDesignSection__Row {
-  --border-color: #ccc;
-  border: 0.2em dashed var(--border-color);
+  --border-color: var(--secondary-color);
+  border-style: dotted;
+  border-color: var(--border-color);
   width: 100%;
   display: grid;
-  justify-content: start;
   cursor: pointer;
   overflow: hidden;
+  outline: none;
 }
 
 .NewDocumentDesignSection__Row_Columns {
@@ -41,15 +41,19 @@
 }
 
 .NewDocumentDesignSection__Column {
-  --border-color: #ccc;
-  border: 0.2em dashed var(--border-color);
-  width: max-content;
+  --border-color: var(--accent-color);
+  border-style: dotted;
+  border-color: var(--border-color);
   display: grid;
   gap: 1em;
   cursor: pointer;
+  outline: none;
 }
 
 .NewDocumentDesignSection__Row_Components {
+  display: grid;
+  grid-auto-flow: column;
+  width: max-content;
   position: relative;
   cursor: pointer;
   align-content: start;

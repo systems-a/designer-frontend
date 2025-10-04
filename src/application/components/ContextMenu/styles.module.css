@@ -1,0 +1,36 @@
+.ContextMenu {
+  position: fixed;
+  border: 0.05em solid var(--border-color);
+  border-radius: 0.5em;
+  overflow: hidden;
+  z-index: 10000;
+}
+
+.ContextMenu button {
+  --border-color: #444;
+  border: none;
+  border-radius: 0;
+  border-bottom: 0.01em solid var(--border-color);
+  background-color: var(--primary-color);
+  font-size: 1.2em;
+  display: grid;
+  grid-template-columns: max-content max-content;
+  justify-content: start;
+  align-items: center;
+  gap: 0.5em;
+  padding: 0.5em;
+  min-width: 15em;
+  color: white;
+}
+
+.ContextMenu button:active {
+  scale: 1;
+}
+
+.ContextMenu button:hover {
+  background-color: var(--border-color);
+}
+
+.ContextMenu li:last-child button {
+  border-bottom: none;
+}

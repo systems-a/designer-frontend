@@ -1,8 +1,5 @@
 import { v4 as UUIDv4 } from "uuid";
-import { updatePage } from "./pages";
 import { displayComponent } from "./components";
-
-const factor = 12;
 
 const getNewColumnProperties = () => ({
   id: UUIDv4(),
@@ -16,7 +13,7 @@ const getNewColumnProperties = () => ({
     gap: {
       id: UUIDv4(),
       name: 'Gap',
-      value: 0,
+      value: 8,
       dataType: 'number',
     },
   },
@@ -40,14 +37,26 @@ const getNewRowProperties = () => ({
       value: 8,
       dataType: 'number',
     },
+    width: {
+      id: UUIDv4(),
+      name: 'Width',
+      value: '',
+      dataType: 'text',
+    },
+    height: {
+      id: UUIDv4(),
+      name: 'Height',
+      value: 'auto',
+      dataType: 'text',
+    },
   },
   rows: [],
   columns: [],
   components: []
 });
 
-const addColumn = (doc, pageIndex, rowId) => {
-  const page = doc.pages[pageIndex];
+const addColumn = (activePage, rowId) => {
+  const page = activePage;
 
   if (!rowId) return;
   const row = findRow(page.rows, rowId);
@@ -62,14 +71,13 @@ const addColumn = (doc, pageIndex, rowId) => {
   parent.rows.find((r) => r.id === rowId).columns.push(getNewColumnProperties());
 
   return ({
-    ...doc,
-    pages: doc.pages.map(
-      (p, i) => (i === pageIndex ? pageCopy : p))
+    columns: pageCopy.columns,
+    rows: pageCopy.rows,
   });
 }
 
-const addRow = (doc, pageIndex, rowId) => {
-  const page = doc.pages[pageIndex];
+const addRow = (activePage, rowId) => {
+  const page = activePage;
 
   if (rowId) {
     const row = findRow(page.rows, rowId);
@@ -83,21 +91,15 @@ const addRow = (doc, pageIndex, rowId) => {
 
     parent.rows.find((r) => r.id === rowId).rows.push(getNewRowProperties());
 
-    return ({
-      ...doc,
-      pages: doc.pages.map(
-        (p, i) => (i === pageIndex ? pageCopy : p))
-    });
-  } else return updatePage(doc, pageIndex, 'rows',
-    [
-      ...page.rows,
-      getNewRowProperties(),
-    ]
-  )
+    return pageCopy.rows;
+  } else return [
+    ...page.rows,
+    getNewRowProperties(),
+  ]
 }
 
-const deleteColumn = (doc, pageIndex, rowId, columnId) => {
-  const page = doc.pages[pageIndex];
+const deleteColumn = (activePage, rowId, columnId) => {
+  const page = activePage;
   const row = findRow(page.rows, rowId)
 
   const column = findColumn(row, columnId);
@@ -113,18 +115,13 @@ const deleteColumn = (doc, pageIndex, rowId, columnId) => {
 
   parent.columns = parent.columns.filter((c) => c.id !== column.id)
 
-  return ({
-    ...doc,
-    pages: doc.pages.map(
-      (p, i) => (i === pageIndex ? pageCopy : p))
-  });
+  return pageCopy;
 }
 
-const deleteRow = (doc, pageIndex, rowId) => {
-  const page = doc.pages[pageIndex];
-  const row = findRow(page.rows, rowId);
+const deleteRow = (activePage, rowId) => {
+  const row = findRow(activePage.rows, rowId);
 
-  const pageCopy = JSON.parse(JSON.stringify(page));
+  const pageCopy = JSON.parse(JSON.stringify(activePage));
   let parent = pageCopy;
 
   for (let p of row.parents) {
@@ -133,11 +130,7 @@ const deleteRow = (doc, pageIndex, rowId) => {
 
   parent.rows = parent.rows.filter((r) => r.id !== rowId);
 
-  return ({
-    ...doc,
-    pages: doc.pages.map(
-      (p, i) => (i === pageIndex ? pageCopy : p))
-  });
+  return pageCopy;
 }
 
 const findColumn = (row, columnId, parents = []) => {
@@ -150,6 +143,20 @@ const findColumn = (row, columnId, parents = []) => {
   for (let row of row.rows) {
     if (row.rows?.length) {
       return findColumn(row, columnId, [...parents, row.id]);
+    }
+  }
+  return found;
+}
+
+const findColumnIndex = (row, columnId) => {
+  let found = row.columns.findIndex((c) => c.id === columnId);
+  if (found !== -1) {
+    return found;
+  }
+
+  for (let row of row.rows) {
+    if (row.rows?.length) {
+      return findColumnIndex(row, columnId);
     }
   }
   return found;
@@ -170,15 +177,13 @@ const findRow = (rows, rowId, parents = []) => {
   return found;
 }
 
-const getColumnProperty = (doc, pageIndex, rowId, columnId, property) => {
-  const page = doc.pages[pageIndex];
-
+const getColumnProperty = (activePage, rowId, columnId, property) => {
   if (!columnId) return null;
   let value = null;
 
-  const row = findRow(page.rows, rowId);
+  const row = findRow(activePage.rows, rowId);
 
-  const pageCopy = JSON.parse(JSON.stringify(page));
+  const pageCopy = JSON.parse(JSON.stringify(activePage));
   let parent = pageCopy;
 
   for (let p of row.parents) {
@@ -194,15 +199,14 @@ const getColumnProperty = (doc, pageIndex, rowId, columnId, property) => {
   return value;
 }
 
-const getColumnPropertyList = (doc, pageIndex, rowId, columnId) => {
-  const page = doc.pages[pageIndex];
-
+const getColumnPropertyList = (activePage, rowId, columnId) => {
   let value = {};
-  if (!columnId) return value;
+  if (!columnId || !rowId) return value;
 
-  const row = findRow(page.rows, rowId);
+  const row = findRow(activePage.rows, rowId);
+  if (!row) return value;
 
-  const pageCopy = JSON.parse(JSON.stringify(page));
+  const pageCopy = JSON.parse(JSON.stringify(activePage));
   let parent = pageCopy;
 
   for (let p of row.parents) {
@@ -219,16 +223,25 @@ const getColumnPropertyList = (doc, pageIndex, rowId, columnId) => {
 }
 
 const getRowComponents = (
-  doc,
-  setDoc,
-  pageIndex,
+  activePage,
+  currentColumnId,
+  currentComponentId,
+  designPageStyles,
+  activeDesign,
+  gridVisible,
   rows,
   onComponentBlur,
+  onComponentContextMenu,
+  onComponentContextMenuAction,
   onComponentFocus,
   onComponentKeydown,
+  onComponentMouseDown,
+  onComponentMouseUp,
+  onColumnKeydown,
+  onRowKeydown,
+  scaleFactor,
   setCurrentRow,
   setCurrentColumn,
-  styles,
 ) => {
   if (rows) return (
     <>
@@ -238,28 +251,34 @@ const getRowComponents = (
             key={row.id}
             id={row.id}
             tabIndex={index}
-            className={styles['NewDocumentDesignSection__Row']}
+            className={designPageStyles['NewDocumentDesignSection__Row']}
             onFocus={(e) => setCurrentRow(e, row.id)}
+            onKeyDown={(e) => onRowKeydown(e, row.id, currentColumnId, currentComponentId)}
             style={{
-              padding: `${getRowProperty(doc, pageIndex, row.id, 'padding')?.value / factor}em`,
-              height: `${getRowProperty(doc, pageIndex, row.id, 'height')?.value / factor}em`,
-              gap: `${getRowProperty(doc, pageIndex, row.id, 'gap')?.value / factor}em`,
+              borderWidth: gridVisible ? '0.2em' : 0,
+              gap: `${getRowProperty(activePage, row.id, 'gap')?.value / scaleFactor}em`,
+              height: parseInt(getRowProperty(activePage, row.id, 'height')?.value) ? `${getRowProperty(activePage, row.id, 'height')?.value / scaleFactor}em` : getRowProperty(activePage, row.id, 'height')?.value,
+              padding: `${getRowProperty(activePage, row.id, 'padding')?.value / scaleFactor}em`,
+              width: parseInt(getRowProperty(activePage, row.id, 'width')?.value) ? `${getRowProperty(activePage, row.id, 'width')?.value / scaleFactor}em` : getRowProperty(activePage, row.id, 'width')?.value,
             }}
           >
             {
               (row.components.length > 0) && (
-                <div className={styles['NewDocumentDesignSection__Row_Components']}>
+                <div
+                  style={{
+                    gap: `${getRowProperty(activePage, row.id, 'gap')?.value / scaleFactor}em`,
+                  }}
+                  className={designPageStyles['NewDocumentDesignSection__Row_Components']}
+                >
                   {
                     row.components.map((component) => (
                       <div
                         key={component.id}
-                        id={component.id}
                       >
                         {
                           displayComponent(
-                            doc,
-                            setDoc,
-                            pageIndex,
+                            designPageStyles,
+                            activeDesign,
                             row.id,
                             null,
                             component,
@@ -267,11 +286,24 @@ const getRowComponents = (
                               onComponentBlur(e)
                             },
                             (e) => {
+                              onComponentContextMenu(e, component.id, null, row.id)
+                            },
+                            (componentId, columnId, rowId, action) => {
+                              onComponentContextMenuAction(componentId, columnId, rowId, action)
+                            },
+                            (e) => {
                               onComponentFocus(e, component.id, null, row.id)
                             },
                             (e) => {
                               onComponentKeydown(e, component.id, null, row.id)
                             },
+                            (e) => {
+                              onComponentMouseDown(e, component.id, null, row.id)
+                            },
+                            (e) => {
+                              onComponentMouseUp(e, component.id, null, row.id)
+                            },
+                            scaleFactor,
                           )
                         }
                       </div>
@@ -284,39 +316,42 @@ const getRowComponents = (
             {
               (row.columns.length > 0) && (
                 <div
-                  className={styles['NewDocumentDesignSection__Row_Columns']}
+                  className={designPageStyles['NewDocumentDesignSection__Row_Columns']}
                   style={{
-                    gap: `${getRowProperty(doc, pageIndex, row.id, 'gap')?.value / factor}em`,
+                    gap: `${getRowProperty(activePage, row.id, 'gap')?.value / scaleFactor}em`,
                   }}
                 >
                   {
                     row.columns.map((column) => (
                       <div
-                        className={styles['NewDocumentDesignSection__Column']}
+                        className={designPageStyles['NewDocumentDesignSection__Column']}
                         id={column.id}
                         key={column.id}
                         onFocus={(e) => setCurrentColumn(e, row.id)}
+                        onKeyDown={(e) => onColumnKeydown(e, column.id, row.id, currentComponentId)}
                         style={{
-                          padding: `${getColumnProperty(doc, pageIndex, row.id, column.id, 'padding')?.value / factor}em`,
-                          height: `${getColumnProperty(doc, pageIndex, row.id, column.id, 'height')?.value / factor}em`,
-                          gap: `${getColumnProperty(doc, pageIndex, row.id, column.id, 'gap')?.value / factor}em`,
+                          borderWidth: gridVisible ? '0.2em' : 0,
+                          padding: `${getColumnProperty(activePage, row.id, column.id, 'padding')?.value / scaleFactor}em`,
                         }}
                         tabIndex={index}
                       >
                         {
                           (column.components.length > 0) && (
-                            <div className={styles['NewDocumentDesignSection__Row_Components']}>
+                            <div
+                              style={{
+                                gap: `${getColumnProperty(activePage, row.id, column.id, 'gap')?.value / scaleFactor}em`,
+                              }}
+                              className={designPageStyles['NewDocumentDesignSection__Row_Components']}
+                            >
                               {
                                 column.components.map((component) => (
                                   <div
                                     key={component.id}
-                                    id={component.id}
                                   >
                                     {
                                       displayComponent(
-                                        doc,
-                                        setDoc,
-                                        pageIndex,
+                                        designPageStyles,
+                                        activeDesign,
                                         row.id,
                                         column.id,
                                         component,
@@ -324,11 +359,24 @@ const getRowComponents = (
                                           onComponentBlur(e)
                                         },
                                         (e) => {
+                                          onComponentContextMenu(e, component.id, null, row.id)
+                                        },
+                                        (componentId, columnId, rowId, action) => {
+                                          onComponentContextMenuAction(componentId, columnId, rowId, action)
+                                        },
+                                        (e) => {
                                           onComponentFocus(e, component.id, column.id, row.id)
                                         },
                                         (e) => {
                                           onComponentKeydown(e, component.id, column.id, row.id)
                                         },
+                                        (e) => {
+                                          onComponentMouseDown(e, component.id, column.id, row.id)
+                                        },
+                                        (e) => {
+                                          onComponentMouseUp(e, component.id, column.id, row.id)
+                                        },
+                                        scaleFactor,
                                       )
                                     }
 
@@ -355,33 +403,29 @@ const getRowComponents = (
   )
 }
 
-const getRowProperty = (doc, pageIndex, rowId, property) => {
-  const page = doc.pages[pageIndex];
-
+const getRowProperty = (activePage, rowId, property) => {
   if (!rowId) return null;
 
-  const row = findRow(page.rows, rowId);
+  const row = findRow(activePage.rows, rowId);
   return row.properties ? row.properties[property] : null;
 }
 
-const getRowPropertyList = (doc, pageIndex, rowId) => {
-  const page = doc.pages[pageIndex];
-
+const getRowPropertyList = (activePage, rowId) => {
   if (!rowId) return null;
 
-  const row = findRow(page.rows, rowId);
-  console.log(pageIndex)
+  const row = findRow(activePage.rows, rowId);
+  if (!row) return {};
+
   return row.properties ? row.properties : {};
 }
 
-const updateColumnProperty = (doc, pageIndex, rowId, columnId, property, value) => {
-  if (!rowId || !columnId) return doc;
-  const page = doc.pages[pageIndex];
+const updateColumnProperty = (activePage, rowId, columnId, property, value) => {
+  if (!rowId || !columnId) return activePage;
 
-  const pageCopy = JSON.parse(JSON.stringify(page));
+  const pageCopy = JSON.parse(JSON.stringify(activePage));
   let parent = pageCopy;
 
-  const row = findRow(page.rows, rowId);
+  const row = findRow(activePage.rows, rowId);
 
   for (let p of row.parents) {
     parent = parent.rows.find((r) => r.id === p);
@@ -396,19 +440,12 @@ const updateColumnProperty = (doc, pageIndex, rowId, columnId, property, value) 
     ...value,
   };
 
-  return ({
-    ...doc,
-    pages: doc.pages.map(
-      (p, i) => (i === pageIndex ? pageCopy : p)
-    )
-  });
+  return pageCopy;
 }
 
-const updateRowProperty = (doc, pageIndex, rowId, property, value) => {
-  if (!rowId) return doc;
-  const page = doc.pages[pageIndex];
-
-  const row = findRow(page.rows, rowId);
+const updateRowProperty = (activePage, rowId, property, value) => {
+  if (!rowId) return activePage;
+  const row = findRow(activePage.rows, rowId);
 
   row.properties[property] = {
     ...row.properties[property],
@@ -416,9 +453,9 @@ const updateRowProperty = (doc, pageIndex, rowId, property, value) => {
   };
 
   return ({
-    ...doc,
-    pages: doc.pages.map(
-      (p, i) => (i === pageIndex ? page : p)
+    ...activePage,
+    rows: activePage.rows.map(
+      (r) => (r.id === rowId ? row : r)
     )
   });
 }
@@ -429,6 +466,7 @@ export {
   deleteColumn,
   deleteRow,
   findColumn,
+  findColumnIndex,
   findRow,
   getColumnProperty,
   getColumnPropertyList,

@@ -3,46 +3,54 @@ import ColumnProperties from './ColumnProperties';
 import ComponentProperties from './ComponentProperties';
 
 function NewDocumentRightSection({
+  activeDesign,
+  activePage,
   currentComponentId,
   currentColumnId,
-  currentPageIndex,
   currentRowId,
-  doc,
+  design,
+  page,
   setCurrentColumnId,
   setCurrentComponentId,
   setCurrentRowId,
-  setDoc,
+  setPage,
 }) {
   if (currentComponentId) return (
     <ComponentProperties
+      activeDesign={activeDesign}
+      activePage={activePage}
       currentComponentId={currentComponentId}
       currentColumnId={currentColumnId}
-      currentPageIndex={currentPageIndex}
       currentRowId={currentRowId}
-      doc={doc}
+      design={design}
+      page={page}
       setCurrentComponentId={setCurrentComponentId}
-      setDoc={setDoc}
+      setPage={setPage}
     />
   )
 
   if (currentColumnId) return (
     <ColumnProperties
+      activeDesign={activeDesign}
+      activePage={activePage}
       currentColumnId={currentColumnId}
-      currentPageIndex={currentPageIndex}
       currentRowId={currentRowId}
-      doc={doc}
+      design={design}
+      page={page}
       setCurrentColumnId={setCurrentColumnId}
-      setDoc={setDoc}
+      setPage={setPage}
     />
   )
 
   if (currentRowId) return (
     <RowProperties
-      currentPageIndex={currentPageIndex}
+      activeDesign={activeDesign}
+      activePage={activePage}
       currentRowId={currentRowId}
-      doc={doc}
+      design={design}
+      page={page}
       setCurrentRowId={setCurrentRowId}
-      setDoc={setDoc}
+      setPage={setPage}
     />
   )
 }

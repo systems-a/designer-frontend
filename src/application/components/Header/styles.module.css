@@ -3,7 +3,7 @@
   position: sticky;
   top: 0;
   left: 0;
-  z-index: 3;
+  z-index: 10000;
   border-bottom: 0.001em solid var(--border-color);
   height: var(--header-height);
   background-color: var(--primary-color);

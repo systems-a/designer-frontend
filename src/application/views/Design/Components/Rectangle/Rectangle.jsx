@@ -4,9 +4,13 @@ function RectangleComponent({
   columnId,
   component,
   onBlurCallback,
+  onContextMenuCallback,
   onFocusCallback,
-  onKeydownCallback,
+  onKeyDownCallback,
+  onMouseDownCallback,
+  onMouseUpCallback,
   rowId,
+  scaleFactor,
 }) {
   const onBlur = (e) => {
     onBlurCallback(e);
@@ -16,24 +20,52 @@ function RectangleComponent({
     onFocusCallback(e);
   }
 
-  const onKeydown = (e) => {
-    onKeydownCallback(e);
+  const onKeyDown = (e) => {
+    onKeyDownCallback(e);
+  }
+
+  const onMouseDown = (e) => {
+    onMouseDownCallback(e);
+  }
+
+  const onMouseUp = (e) => {
+    onMouseUpCallback(e);
+  }
+
+  const onContextMenu = (e) => {
+    onContextMenuCallback(e);
   }
 
   return (
     <div
       className={styles['Rectangle']}
+      draggable={false}
+      id={component.id}
       onBlur={onBlur}
+      onContextMenu={onContextMenu}
       onFocus={onFocus}
-      onKeyDown={onKeydown}
+      onKeyDown={onKeyDown}
+      onMouseDown={onMouseDown}
+      onMouseUp={onMouseUp}
       style={{
-        width: component.properties.width ? component.properties.width.value * 2 : '30px',
-        height: component.properties.height ? component.properties.height.value * 2 : '30px',
-        background: component.properties.fill ? component.properties.fill.value : '#444',
-        left: `${component.properties.left?.value / 16}em`,
+        background: component.properties.color.properties.fill ? component.properties.color.properties.fill.value : '#444',
+        borderBottomLeftRadius: `${component.properties.radius.properties.bottomLeft?.value / scaleFactor}em`,
+        borderBottomRightRadius: `${component.properties.radius.properties.bottomRight?.value / scaleFactor}em`,
+        borderColor: `${component.properties.stroke.properties.strokeColor?.value}`,
+        borderStyle: 'solid',
+        borderTopLeftRadius: `${component.properties.radius.properties.topLeft?.value / scaleFactor}em`,
+        borderTopRightRadius: `${component.properties.radius.properties.topRight?.value / scaleFactor}em`,
+        borderWidth: `${component.properties.stroke.properties.strokeWidth?.value / scaleFactor}em`,
+        boxShadow: `${component.properties.shadow ? `
+          ${component.properties.shadow.properties.shadowOffsetX?.value}px ${component.properties.shadow.properties.shadowOffsetY?.value}px ${component.properties.shadow.properties.shadowBlur?.value}px ${component.properties.shadow.properties.shadowSpread?.value}px ${component.properties.shadow.properties.shadowColor?.value}
+        ` : ''}`,
+        height: `${component.properties.dimensions.properties.height?.value / scaleFactor}em`,
+        left: `${component.properties.position.properties.left?.value / scaleFactor}em`,
+        opacity: `${component.properties.opacity.properties.value.value}`,
         position: (rowId || columnId) ? 'relative' : 'absolute',
-        top: `${component.properties.top?.value / 16}em`,
-        zIndex: component.properties.zIndex?.value,
+        top: `${component.properties.position.properties.top?.value / scaleFactor}em`,
+        width: `${component.properties.dimensions.properties.width?.value / scaleFactor}em`,
+        zIndex: `${component.properties.position.properties.zIndex?.value}`,
       }}
       tabIndex={0}
     />

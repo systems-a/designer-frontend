@@ -1,5 +1,5 @@
 import { useEffect } from "react"
-import { Route, Routes, useLocation } from "react-router-dom"
+import { Navigate, Route, Routes, useLocation } from "react-router-dom"
 
 import Login from "../application/views/Login/Login"
 import Homepage from "../application/views/Homepage/Homepage";
@@ -14,9 +14,10 @@ export default function Config () {
 
   return (
     <Routes>
-      <Route path="/design" element={<Design />} />
+      <Route path="/design/:designId/pages/:pageId" element={<Design />} />
       <Route path="/login" element={<Login />} />
       <Route path="/" element={<Homepage />} />
+      <Route path="*" element={<Navigate to="/" />} />
     </Routes>
   )
 }

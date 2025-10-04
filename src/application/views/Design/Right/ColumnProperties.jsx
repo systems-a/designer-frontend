@@ -3,17 +3,19 @@ import {
   getColumnProperty,
   getColumnPropertyList,
   updateColumnProperty
-} from '../lib/layout';
+} from '../../../lib/layout';
+import { addPageHistoryEntry } from '../../../services/storage/page';
 
 import styles from './styles.module.css'
 
 function ColumnProperties({
+  activePage,
   currentColumnId,
-  currentPageIndex,
   currentRowId,
-  doc,
+  design,
+  page,
   setCurrentColumnId,
-  setDoc,
+  setPage,
 }) {
   return (
     <ul className={styles['NewDocumentRightSection']}>
@@ -22,8 +24,16 @@ function ColumnProperties({
 
         <button
           onClick={() => {
-            setDoc(deleteColumn(doc, currentPageIndex, currentRowId, currentColumnId));
             setCurrentColumnId(null);
+            let updatedPage = deleteColumn(activePage, currentRowId, currentColumnId);
+
+            updatedPage = addPageHistoryEntry(design.id, page.id, {
+              ...updatedPage,
+              currentColumnId: null,
+              currentRowId,
+            })
+
+            setPage(updatedPage);
           }}
           className={styles['NewDocumentRightSection__Delete_Button']}
         >
@@ -35,10 +45,10 @@ function ColumnProperties({
       </li>
 
       {
-        Object.keys(getColumnPropertyList(doc, currentPageIndex, currentRowId, currentColumnId))
-          .filter((property) => getColumnProperty(doc, currentPageIndex, currentRowId, currentColumnId, property).name)
+        Object.keys(getColumnPropertyList(activePage, currentRowId, currentColumnId))
+          .filter((property) => getColumnProperty(activePage, currentRowId, currentColumnId, property).name)
           .map((property) => (
-            <li key={getColumnProperty(doc, currentPageIndex, currentRowId, currentColumnId, property).id}>
+            <li key={getColumnProperty(activePage, currentRowId, currentColumnId, property).id}>
               <div className={styles['NewDocumentRightSection__Three_Column']}>
                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
                   stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -48,21 +58,31 @@ function ColumnProperties({
                 </svg>
 
                 <h4>
-                  {getColumnProperty(doc, currentPageIndex, currentRowId, currentColumnId, property).name}
+                  {getColumnProperty(activePage, currentRowId, currentColumnId, property).name}
                 </h4>
 
                 <input
-                  type={getColumnProperty(doc, currentPageIndex, currentRowId, currentColumnId, property).dataType}
-                  value={getColumnProperty(doc, currentPageIndex, currentRowId, currentColumnId, property).value}
+                  type={getColumnProperty(activePage, currentRowId, currentColumnId, property).dataType}
+                  value={getColumnProperty(activePage, currentRowId, currentColumnId, property).value}
                   onChange={
-                    (e) => setDoc(updateColumnProperty(
-                      doc,
-                      currentPageIndex,
-                      currentRowId,
-                      currentColumnId,
-                      property,
-                      { value: e.target.value }
-                    ))}
+                    (e) => {
+                      let updatedPage = updateColumnProperty(
+                        activePage,
+                        currentRowId,
+                        currentColumnId,
+                        property,
+                        { value: e.target.value }
+                      )
+
+                      updatedPage = addPageHistoryEntry(design.id, page.id, {
+                        ...updatedPage,
+                        currentColumnId,
+                        currentRowId,
+                      })
+
+                      setPage(updatedPage);
+                    }
+                  }
                 />
               </div>
             </li>

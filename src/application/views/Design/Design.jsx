@@ -1,39 +1,39 @@
 import { useEffect, useRef, useState } from 'react'
+import { Navigate, useNavigate, useParams } from 'react-router-dom';
 import styles from './styles.module.css'
-
-import {
-  getDefaultPageProperties,
-} from './lib/pages';
 
 import DesignMainSection from './Main/Main';
 import DesignLeftSection from './Left/Left';
 import DesignRightSection from './Right/Right';
 import Header from '../../components/Header/Header';
 
+import { addDesignHistoryEntry, getDesign } from '../../services/storage/design';
+import { addPageHistoryEntry, getPage } from '../../services/storage/page';
+
 function Design() {
   const pageRef = useRef();
+  const navigate = useNavigate();
 
-  const storedDocument = JSON.parse(localStorage.getItem('document'));
+  const { designId, pageId } = useParams();
 
-  const [design, setDesign] = useState(storedDocument ? storedDocument : {
-    title: 'New document',
-    pages: [getDefaultPageProperties()]
-  });
+  const [design, setDesign] = useState(getDesign(designId));
+  const [activeDesign, setActiveDesign] = useState(design?.history[design?.currentHistoryEntryIndex]);
+  const [page, setPage] = useState(getPage(designId, pageId));
+  const [activePage, setActivePage] = useState(page?.history[page?.currentHistoryEntryIndex]);
 
-  const [currentPageIndex, setCurrentPageIndex] = useState(0);
-  const [currentRowId, setCurrentRowId] = useState(null);
-  const [currentColumnParentId, setCurrentColumnParentId] = useState(null);
-  const [currentColumnId, setCurrentColumnId] = useState(null);
-  const [currentComponentId, setCurrentComponentId] = useState(null);
+  const [currentRowId, setCurrentRowId] = useState(activePage ? activePage.currentRowId : null);
+  const [currentColumnParentId, setCurrentColumnParentId] = useState(activePage ? activePage.currentColumnParentId : null);
+  const [currentColumnId, setCurrentColumnId] = useState(activePage ? activePage.currentColumnId : null);
+  const [currentComponentId, setCurrentComponentId] = useState(activePage ? activePage.currentComponentId : null);
 
-  const resetSelections = () => {
-    document.querySelectorAll(`.${styles['Design__Active_Row']}`).forEach((row) => {
+  const resetSelections = (row = true, column = true, component = true) => {
+    if (row) document.querySelectorAll(`.${styles['Design__Active_Row']}`).forEach((row) => {
       row.classList.remove(styles['Design__Active_Row']);
     });
-    document.querySelectorAll(`.${styles['Design__Active_Column']}`).forEach((column) => {
+    if (column) document.querySelectorAll(`.${styles['Design__Active_Column']}`).forEach((column) => {
       column.classList.remove(styles['Design__Active_Column']);
     });
-    document.querySelectorAll(`.${styles['Design__Active_Component']}`).forEach((component) => {
+    if (component) document.querySelectorAll(`.${styles['Design__Active_Component']}`).forEach((component) => {
       component.classList.remove(styles['Design__Active_Component']);
     });
   }
@@ -43,10 +43,14 @@ function Design() {
 
     const columnElement = e.target;
 
-    setCurrentComponentId(null);
-    setCurrentColumnId(e.target.id);
-    setCurrentColumnParentId(rowId);
-    setCurrentRowId(rowId);
+    const updatedPage = addPageHistoryEntry(design.id, page.id, {
+      currentComponentId: null,
+      currentColumnId: e.target.id,
+      currentColumnParentId: rowId,
+      currentRowId: rowId,
+    })
+
+    setPage(updatedPage);
 
     resetSelections();
 
@@ -56,36 +60,40 @@ function Design() {
   const setCurrentRow = (e) => {
     const rowElement = e.target;
 
-    setCurrentRowId(e.target.id);
-    setCurrentColumnId(null);
-    setCurrentColumnParentId(null);
-    setCurrentComponentId(null);
+    const updatedPage = addPageHistoryEntry(design.id, page.id, {
+      currentComponentId: null,
+      currentColumnId: null,
+      currentColumnParentId: null,
+      currentRowId: e.target.id,
+    })
+
+    setPage(updatedPage);
 
     resetSelections();
 
     rowElement.classList.add(styles['Design__Active_Row'])
   }
 
-  const updateDocument = (property, value) => {
-     setDesign({
-      ...design,
-      [property]: value,
-    });
-  }
-
   useEffect(() => {
-    localStorage.setItem('document', JSON.stringify(design));
+    if (!currentComponentId && !currentColumnId && !currentColumnParentId && !currentRowId) {
+      document.getElementById('page')?.focus();
+    }
 
     const pageClickEventListener = (e) => {
-      if (!(e.target.classList.contains(styles['Design__Active_Row']) ||
-        e.target.classList.contains(styles['Design__Active_Column']) ||
-        e.target.classList.contains(styles['Design__Active_Component'])
+      if (!(e.target.classList.contains(styles['Design__Active_Row'])
+        || e.target.classList.contains(styles['Design__Active_Column'])
+        || e.target.classList.contains(styles['Design__Active_Component'])
+        || e.target.classList.contains(styles['Design__Context_Menu'])
       )) {
+        const updatedPage = addPageHistoryEntry(design.id, page.id, {
+          currentComponentId: null,
+          currentColumnId: null,
+          currentColumnParentId: null,
+          currentRowId: null,
+        })
+
+        setPage(updatedPage);
         resetSelections();
-        setCurrentRowId(null)
-        setCurrentColumnId(null);
-        setCurrentColumnParentId(null);
-        setCurrentComponentId(null);
       }
     }
 
@@ -94,14 +102,52 @@ function Design() {
     return () => {
       document.getElementById('page')?.removeEventListener(('click'), pageClickEventListener)
     }
-  }, [currentPageIndex, design])
+  }, [
+    design,
+    page,
+    currentColumnId,
+    currentColumnParentId,
+    currentComponentId,
+    currentRowId,
+  ])
 
   useEffect(() => {
-    setCurrentRowId(null);
-    setCurrentColumnId(null);
-    setCurrentColumnParentId(null);
-    setCurrentComponentId(null);
-  }, [currentPageIndex])
+    if (!design || !page) return;
+
+    setActivePage(page.history[page.currentHistoryEntryIndex]);
+
+    navigate(`/design/${design.id}/pages/${page.id}`);
+  }, [design, page, pageId, navigate])
+
+  useEffect(() => {
+    if (currentComponentId) document.getElementById(currentComponentId)?.focus();
+    else if (currentColumnId) {
+      document.getElementById(currentColumnId)?.focus();
+    } else if (currentRowId) {
+      document.getElementById(currentRowId)?.focus();
+    } else {
+      pageRef.current?.focus();
+    }
+  }, [currentComponentId, currentColumnId, currentRowId])
+
+  useEffect(() => {
+    setPage(getPage(designId, pageId))
+
+    // Record page navigation in design history
+    setDesign(addDesignHistoryEntry(designId, {
+      currentPageId: pageId,
+    }))
+  }, [designId, pageId])
+
+  useEffect(() => {
+    if (!activePage) return;
+    setCurrentComponentId(activePage.currentComponentId);
+    setCurrentColumnParentId(activePage.currentColumnParentId);
+    setCurrentColumnId(activePage.currentColumnId);
+    setCurrentRowId(activePage.currentRowId);
+  }, [activePage]);
+
+  if (!activeDesign || !activePage) return <Navigate to="/" />
 
   return (
     <div className={styles['Design']} ref={pageRef}>
@@ -109,44 +155,59 @@ function Design() {
 
       <main>
         <DesignLeftSection
+          activeDesign={activeDesign}
+          activePage={activePage}
           currentColumnId={currentColumnId}
           currentColumnParentId={currentColumnParentId}
-          currentPageIndex={currentPageIndex}
+          currentComponentId={currentComponentId}
           currentRowId={currentRowId}
-          doc={design}
-          documentPageRef={pageRef}
+          design={design}
+          page={page}
           setCurrentColumnId={setCurrentColumnId}
           setCurrentColumnParentId={setCurrentColumnParentId}
           setCurrentComponentId={setCurrentComponentId}
-          setCurrentPageIndex={setCurrentPageIndex}
           setCurrentRowId={setCurrentRowId}
-          setDoc={setDesign}
-          updateDoc={updateDocument}
+          setActiveDesign={setActiveDesign}
+          setActivePage={setActivePage}
+          setDesign={setDesign}
+          setPage={setPage}
         />
 
         <DesignMainSection
           activeComponentClass={styles['Design__Active_Component']}
-          currentPageIndex={currentPageIndex}
-          doc={design}
+          activeDesign={activeDesign}
+          activePage={activePage}
+          currentColumnId={currentColumnId}
+          currentColumnParentId={currentColumnParentId}
+          currentComponentId={currentComponentId}
+          currentRowId={currentRowId}
+          design={design}
+          page={page}
           resetSelections={resetSelections}
           setCurrentColumn={setCurrentColumn}
           setCurrentColumnId={setCurrentColumnId}
+          setCurrentColumnParentId={setCurrentColumnParentId}
           setCurrentComponentId={setCurrentComponentId}
           setCurrentRow={setCurrentRow}
           setCurrentRowId={setCurrentRowId}
-          setDoc={setDesign}
+          setActiveDesign={setActiveDesign}
+          setActivePage={setActivePage}
+          setDesign={setDesign}
+          setPage={setPage}
         />
 
         <DesignRightSection
+          activeDesign={activeDesign}
+          activePage={activePage}
           currentComponentId={currentComponentId}
           currentColumnId={currentColumnId}
-          currentPageIndex={currentPageIndex}
           currentRowId={currentRowId}
-          doc={design}
+          design={design}
+          page={page}
           setCurrentColumnId={setCurrentColumnId}
           setCurrentComponentId={setCurrentComponentId}
           setCurrentRowId={setCurrentRowId}
-          setDoc={setDesign}
+          setPage={setPage}
         />
       </main>
     </div>

@@ -1,52 +1,72 @@
+import { Link } from 'react-router-dom';
+
 import {
   getComponent,
-} from '../lib/components';
+} from '../../../lib/components';
 
 import {
   addColumn,
   addRow
-} from '../lib/layout';
+} from '../../../lib/layout';
 
 import {
-  addPage,
+  addDesignHistoryEntry,
+  getDesign,
+} from '../../../services/storage/design';
+
+import {
+  addPageHistoryEntry,
   deletePage,
-  updatePage
-} from '../lib/pages'
+} from '../../../services/storage/page';
 
 import styles from './styles.module.css'
+import { createNewPage, getPage } from '../../../services/storage/page';
 
 function DesignLeftSection({
+  activeDesign,
+  activePage,
   currentColumnId,
   currentColumnParentId,
-  currentPageIndex,
+  currentComponentId,
   currentRowId,
-  doc,
-  documentPageRef,
+  design,
+  page,
   setCurrentColumnId,
   setCurrentColumnParentId,
   setCurrentComponentId,
-  setCurrentPageIndex,
   setCurrentRowId,
-  setDoc,
-  updateDoc,
+  setActiveDesign,
+  setDesign,
+  setPage,
 }) {
-  const currentPage = doc.pages[currentPageIndex];
-
   return (
     <ul className={styles['NewDocumentLeftSection__Controls']}>
       <li>
         <input
           className={styles['NewDocumentLeftSection__Controls_Title']}
-          value={doc.title}
-          placeholder="Enter document title"
-          onChange={(e) => updateDoc('title', e.target.value)}
+          defaultValue={activeDesign.title}
+          placeholder="Untitled design"
+          onBlur={(e) => {
+            const updatedDesign = addDesignHistoryEntry(design.id, { title: e.target.value })
+            setDesign(updatedDesign);
+          }}
         />
       </li>
 
       <li>
         <button
           className={styles['NewDocumentLeftSection__Controls_Button']}
-          onClick={() => setDoc(addPage(doc))}
+          onClick={() => {
+            const newPageId = createNewPage(design.id);
+
+            const updatedDesign = getDesign(design.id);
+            const newPage = getPage(design.id, newPageId);
+
+            setDesign(updatedDesign);
+            setActiveDesign(updatedDesign.history[updatedDesign.currentHistoryEntryIndex]);
+
+            setPage(newPage);
+          }}
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
             <path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
@@ -63,29 +83,32 @@ function DesignLeftSection({
       <li className={styles['NewDocumentLeftSection__Controls_Pages']}>
         <ul>
           {
-            doc.pages.map((page, index) => (
+            activeDesign.pages.map((p) => (
               <li
-                className={currentPageIndex == index ? styles['NewDocumentLeftSection__Controls_Pages_Current_Page'] : ''}
-                key={page.id}
+                className={p.id == page.id ? styles['NewDocumentLeftSection__Controls_Pages_Current_Page'] : ''}
+                key={p.id}
               >
-                <button
-                  onClick={() => {
-                    setCurrentRowId(null);
-                    setCurrentColumnId(null);
-                    setCurrentColumnParentId(null);
-                    setCurrentComponentId(null);
-                    setCurrentPageIndex(index)
-                  }}
-                >
-                  Page {index + 1}
-                </button>
+                <Link to={`/design/${design.id}/pages/${p.id}`}>
+                  {p.title}
+                </Link>
 
                 {
-                  doc.pages.length > 1 && (
+                  activeDesign.pages.length > 1 && (
                     <button
                       onClick={() => {
-                        setCurrentPageIndex(currentPageIndex - 1 < 0 ? 0 : currentPageIndex - 1);
-                        setDoc(deletePage(doc, index))
+                        setCurrentComponentId(null);
+                        setCurrentColumnId(null);
+                        setCurrentColumnParentId(null);
+                        setCurrentRowId(null);
+
+                        const data = deletePage(design.id, p.id);
+
+                        setDesign(data.updatedDesign);
+                        setActiveDesign(data.updatedDesign.history[data.updatedDesign.currentHistoryEntryIndex]);
+
+                        const updatedPage = getPage(design.id, data.updatedCurrentPageId);
+
+                        setPage(updatedPage);
                       }}
                       className={styles['NewDocumentLeftSection__Controls_Pages_Delete_Button']}
                     >
@@ -103,24 +126,104 @@ function DesignLeftSection({
       </li>
 
       <li>
-        <h3>Auto layout</h3>
+        <h3>Auto Layout</h3>
       </li>
 
       <ul className={styles['NewDocumentLeftSection__Controls_Pages_Current_Page_Properties']}>
         <li>
           <div className={styles['NewDocumentLeftSection__Controls_Pages_Current_Page_Properties_Three_Column']}>
-            <input type="checkbox" checked={currentPage?.autoLayout} onChange={(e) => setDoc(updatePage(doc, currentPageIndex, 'autoLayout', e.target.checked))} />
+            <input
+              type="checkbox"
+              checked={activePage?.autoLayout}
+              onChange={(e) => {
+                const updatedPage = addPageHistoryEntry(
+                  design.id,
+                  page.id,
+                  {
+                    autoLayout: e.target.checked,
+                    currentComponentId: null,
+                    currentColumnId: null,
+                    currentColumnParentId: null,
+                    currentRowId: null,
+                  }
+                )
+
+                setPage(updatedPage);
+              }}
+            />
             Enable
           </div>
         </li>
 
         {
-          currentPage?.autoLayout && (
+          activePage?.autoLayout && (
             <>
+              <li>
+                <div className={styles['NewDocumentLeftSection__Controls_Pages_Current_Page_Properties_Three_Column']}>
+                  <input
+                    type="checkbox"
+                    checked={activePage?.gridVisible}
+                    onChange={(e) => {
+                      const updatedPage = addPageHistoryEntry(design.id, page.id, {
+                        gridVisible: e.target.checked,
+                        currentComponentId,
+                        currentColumnId,
+                        currentColumnParentId,
+                        currentRowId,
+                      })
+
+                      setPage(updatedPage);
+                    }}
+                  />
+                  Show grid
+                </div>
+              </li>
+              <li>
+                <div className={styles['NewDocumentLeftSection__Controls_Pages_Current_Page_Properties_Three_Column']}>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="4" y1="12" x2="20" y2="12"/>
+                    <polyline points="8 8 4 12 8 16"/>
+                    <polyline points="16 8 20 12 16 16"/>
+                  </svg>
+
+                  <h4>
+                    Gap
+                  </h4>
+
+                  <input
+                    type="number"
+                    value={activePage?.gap}
+                    onChange={(e) => {
+                      if (e.target.value.trim() == '') e.target.value = 0;
+                      const updatedPage = addPageHistoryEntry(design.id, page.id, {
+                        gap: parseInt(e.target.value),
+                        currentComponentId,
+                        currentColumnId,
+                        currentColumnParentId,
+                        currentRowId,
+                      })
+
+                      setPage(updatedPage);
+                    }}
+                  />
+                </div>
+              </li>
+
               <li>
                 <button
                   className={styles['NewDocumentLeftSection__Controls_Pages_Current_Page_Properties_Button']}
-                  onClick={() => setDoc(addRow(doc, currentPageIndex, currentRowId))}
+                  onClick={() => {
+                    const updatedPage = addPageHistoryEntry(design.id, page.id, {
+                      rows: addRow(activePage, currentRowId),
+                      currentComponentId,
+                      currentColumnId,
+                      currentColumnParentId,
+                      currentRowId,
+                    })
+
+                    setPage(updatedPage);
+                  }}
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
                     stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -141,7 +244,18 @@ function DesignLeftSection({
                   <li>
                     <button
                       className={styles['NewDocumentLeftSection__Controls_Pages_Current_Page_Properties_Button']}
-                      onClick={() => setDoc(addColumn(doc, currentPageIndex, currentColumnParentId || currentRowId))}
+                      onClick={() => {
+                        const updatedPage = addPageHistoryEntry(design.id, page.id, {
+                          columns: addColumn(activePage, currentRowId).columns,
+                          rows: addColumn(activePage, currentRowId).rows,
+                          currentComponentId,
+                          currentColumnId,
+                          currentColumnParentId,
+                          currentRowId,
+                        })
+
+                        setPage(updatedPage);
+                      }}
                     >
                       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
                         stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -156,117 +270,571 @@ function DesignLeftSection({
                   </li>
                 )
               }
+
+              <li>
+                <h3>Padding</h3>
+              </li>
+
+              <li>
+                <div className={styles['NewDocumentLeftSection__Controls_Pages_Current_Page_Properties_Three_Column']}>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="4" y1="12" x2="20" y2="12"/>
+                    <polyline points="8 8 4 12 8 16"/>
+                    <polyline points="16 8 20 12 16 16"/>
+                  </svg>
+
+                  <h4>
+                    Top
+                  </h4>
+
+                  <input
+                    type="number"
+                    value={activePage?.paddingTop}
+                    onChange={(e) => {
+                      if (e.target.value.trim() == '') e.target.value = 0;
+                      const updatedPage = addPageHistoryEntry(design.id, page.id, {
+                        paddingTop: parseInt(e.target.value),
+                        currentComponentId,
+                        currentColumnId,
+                        currentColumnParentId,
+                        currentRowId,
+                      })
+
+                      setPage(updatedPage);
+                    }}
+                  />
+                </div>
+              </li>
+
+              <li>
+                <div className={styles['NewDocumentLeftSection__Controls_Pages_Current_Page_Properties_Three_Column']}>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="4" y1="12" x2="20" y2="12"/>
+                    <polyline points="8 8 4 12 8 16"/>
+                    <polyline points="16 8 20 12 16 16"/>
+                  </svg>
+
+                  <h4>
+                    Right
+                  </h4>
+
+                  <input
+                    type="number"
+                    value={activePage?.paddingRight}
+                    onChange={(e) => {
+                      if (e.target.value.trim() == '') e.target.value = 0;
+                      const updatedPage = addPageHistoryEntry(design.id, page.id, {
+                        paddingRight: parseInt(e.target.value),
+                        currentComponentId,
+                        currentColumnId,
+                        currentColumnParentId,
+                        currentRowId,
+                      })
+
+                      setPage(updatedPage);
+                    }}
+                  />
+                </div>
+              </li>
+
+              <li>
+                <div className={styles['NewDocumentLeftSection__Controls_Pages_Current_Page_Properties_Three_Column']}>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="4" y1="12" x2="20" y2="12"/>
+                    <polyline points="8 8 4 12 8 16"/>
+                    <polyline points="16 8 20 12 16 16"/>
+                  </svg>
+
+                  <h4>
+                    Left
+                  </h4>
+
+                  <input
+                    type="number"
+                    value={activePage?.paddingLeft}
+                    onChange={(e) => {
+                      if (e.target.value.trim() == '') e.target.value = 0;
+                      const updatedPage = addPageHistoryEntry(design.id, page.id, {
+                        paddingLeft: parseInt(e.target.value),
+                        currentComponentId,
+                        currentColumnId,
+                        currentColumnParentId,
+                        currentRowId,
+                      })
+
+                      setPage(updatedPage);
+                    }}
+                  />
+                </div>
+              </li>
+
+              <li>
+                <div className={styles['NewDocumentLeftSection__Controls_Pages_Current_Page_Properties_Three_Column']}>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="4" y1="12" x2="20" y2="12"/>
+                    <polyline points="8 8 4 12 8 16"/>
+                    <polyline points="16 8 20 12 16 16"/>
+                  </svg>
+
+                  <h4>
+                    Bottom
+                  </h4>
+
+                  <input
+                    type="number"
+                    value={activePage?.paddingBottom}
+                    onChange={(e) => {
+                      if (e.target.value.trim() == '') e.target.value = 0;
+                      const updatedPage = addPageHistoryEntry(design.id, page.id, {
+                        paddingBottom: parseInt(e.target.value),
+                        currentComponentId,
+                        currentColumnId,
+                        currentColumnParentId,
+                        currentRowId,
+                      })
+
+                      setPage(updatedPage);
+                    }}
+                  />
+                </div>
+              </li>
             </>
           )
         }
       </ul>
 
-      <li>
-        <h3>Page properties</h3>
-      </li>
-
       <ul className={styles['NewDocumentLeftSection__Controls_Pages_Current_Page_Properties']}>
-        <li>
-          <div className={styles['NewDocumentLeftSection__Controls_Pages_Current_Page_Properties_Three_Column']}>
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
-              stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="4" y1="12" x2="20" y2="12"/>
-              <polyline points="8 8 4 12 8 16"/>
-              <polyline points="16 8 20 12 16 16"/>
-            </svg>
-
-            <h4>
-              Width
-            </h4>
-
-            <input
-              type="number"
-              value={currentPage?.width}
-              onChange={(e) => setDoc(updatePage(doc, currentPageIndex, 'width', e.target.value))}
-              disabled={currentPage?.autoLayout}
-            />
-          </div>
-        </li>
-
-        <li>
-          <div className={styles['NewDocumentLeftSection__Controls_Pages_Current_Page_Properties_Three_Column']}>
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
-              stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="12" y1="4" x2="12" y2="20"/>
-              <polyline points="8 8 12 4 16 8"/>
-              <polyline points="8 16 12 20 16 16"/>
-            </svg>
-
-            <h4>
-              Height
-            </h4>
-
-            <input
-              type="number"
-              value={currentPage?.height}
-              onChange={(e) => setDoc(updatePage(doc, currentPageIndex, 'height', e.target.value))}
-              disabled={currentPage?.autoLayout}
-            />
-          </div>
-        </li>
-
         {
-          !currentPage?.autoLayout && (
-            <li>
-              <div className={styles['NewDocumentLeftSection__Controls_Pages_Current_Page_Properties_Single_Column']}>
-                <select onChange={(e) => {
-                  setDoc(
-                    getComponent(doc, currentPageIndex, e.target.value, currentRowId, currentColumnId, currentColumnParentId)
-                  )
-                }} value='select'>
-                  <option value='select'>Add component</option>
-                  <option value="line">Line</option>
-                  <option value="circle">Circle</option>
-                  <option value="rectangle">Rectangle</option>
-                  <option value="text">Text</option>
-                  <option value="image">Image</option>
-                </select>
-              </div>
-            </li>
+          !activePage?.autoLayout && (
+            <>
+              <li>
+                <h3>Dimensions</h3>
+              </li>
+              <li>
+                <div className={styles['NewDocumentLeftSection__Controls_Pages_Current_Page_Properties_Three_Column']}>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="4" y1="12" x2="20" y2="12"/>
+                    <polyline points="8 8 4 12 8 16"/>
+                    <polyline points="16 8 20 12 16 16"/>
+                  </svg>
+
+                  <h4>
+                    Width
+                  </h4>
+
+                  <input
+                    type="number"
+                    value={activePage?.width}
+                    onChange={(e) => {
+                      if (e.target.value.trim() == '') e.target.value = 0;
+                      const updatedPage = addPageHistoryEntry(design.id, page.id, {
+                        width: parseInt(e.target.value),
+                        currentComponentId,
+                        currentColumnId,
+                        currentColumnParentId,
+                        currentRowId,
+                      })
+
+                      setPage(updatedPage);
+                    }}
+                  />
+                </div>
+              </li>
+
+              <li>
+                <div className={styles['NewDocumentLeftSection__Controls_Pages_Current_Page_Properties_Three_Column']}>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="12" y1="4" x2="12" y2="20"/>
+                    <polyline points="8 8 12 4 16 8"/>
+                    <polyline points="8 16 12 20 16 16"/>
+                  </svg>
+
+                  <h4>
+                    Height
+                  </h4>
+
+                  <input
+                    type="number"
+                    value={activePage?.height}
+                    onChange={(e) => {
+                      if (e.target.value.trim() == '') e.target.value = 0;
+                      const updatedPage = addPageHistoryEntry(design.id, page.id, {
+                        height: parseInt(e.target.value),
+                        currentComponentId,
+                        currentColumnId,
+                        currentColumnParentId,
+                        currentRowId,
+                      })
+
+                      setPage(updatedPage);
+                    }}
+                  />
+                </div>
+              </li>
+
+              <li>
+                <h3>Design Components</h3>
+              </li>
+
+              <li>
+                <div className={styles['NewDocumentLeftSection__Controls_Pages_Current_Page_Properties_Three_Column']}>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                    <circle cx="12" cy="12" r="8"/>
+                  </svg>
+
+                  <h4>
+                    Circle
+                  </h4>
+
+                  <button
+                    className={styles['NewDocumentLeftSection__Controls_Pages_Current_Page_Add_Component_Button']}
+                    onClick={() => {
+                      let updatedPage = getComponent(activePage, 'circle', null, null, null)
+                      updatedPage = addPageHistoryEntry(design.id, page.id, {
+                        ...updatedPage,
+                        currentComponentId,
+                        currentColumnId,
+                        currentColumnParentId,
+                        currentRowId,
+                      })
+
+                      setPage(updatedPage);
+                    }}
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                      <path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  </button>
+                </div>
+              </li>
+
+              <li>
+                <div className={styles['NewDocumentLeftSection__Controls_Pages_Current_Page_Properties_Three_Column']}>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                    <line x1="4" y1="12" x2="20" y2="12"/>
+                  </svg>
+
+                  <h4>
+                    Line
+                  </h4>
+
+                  <button
+                    className={styles['NewDocumentLeftSection__Controls_Pages_Current_Page_Add_Component_Button']}
+                    onClick={() => {
+                      let updatedPage = getComponent(activePage, 'line', null, null, null)
+                      updatedPage = addPageHistoryEntry(design.id, page.id, {
+                        ...updatedPage,
+                        currentComponentId,
+                        currentColumnId,
+                        currentColumnParentId,
+                        currentRowId,
+                      })
+
+                      setPage(updatedPage);
+                    }}
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                      <path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  </button>
+                </div>
+              </li>
+
+              <li>
+                <div className={styles['NewDocumentLeftSection__Controls_Pages_Current_Page_Properties_Three_Column']}>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                    <rect x="4" y="6" width="16" height="12"/>
+                  </svg>
+
+                  <h4>
+                    Rectangle
+                  </h4>
+
+                  <button
+                    className={styles['NewDocumentLeftSection__Controls_Pages_Current_Page_Add_Component_Button']}
+                    onClick={() => {
+                      let updatedPage = getComponent(activePage, 'rectangle', null, null, null)
+                      updatedPage = addPageHistoryEntry(design.id, page.id, {
+                        ...updatedPage,
+                        currentComponentId,
+                        currentColumnId,
+                        currentColumnParentId,
+                        currentRowId,
+                      })
+
+                      setPage(updatedPage);
+                    }}
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                      <path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  </button>
+                </div>
+              </li>
+
+              <li>
+                <div className={styles['NewDocumentLeftSection__Controls_Pages_Current_Page_Properties_Three_Column']}>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M4 6h16"/>
+                    <path d="M12 6v12"/>
+                  </svg>
+
+                  <h4>
+                    Text
+                  </h4>
+
+                  <button
+                    className={styles['NewDocumentLeftSection__Controls_Pages_Current_Page_Add_Component_Button']}
+                    onClick={() => {
+                      let updatedPage = getComponent(activePage, 'text', null, null, null)
+                      updatedPage = addPageHistoryEntry(design.id, page.id, {
+                        ...updatedPage,
+                        currentComponentId,
+                        currentColumnId,
+                        currentColumnParentId,
+                        currentRowId,
+                      })
+
+                      setPage(updatedPage);
+                    }}
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                      <path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  </button>
+                </div>
+              </li>
+
+              <li>
+                <div className={styles['NewDocumentLeftSection__Controls_Pages_Current_Page_Properties_Three_Column']}>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="3" y="5" width="18" height="14" rx="2" ry="2"/>
+                    <circle cx="8.5" cy="10.5" r="1.5"/>
+                    <path d="M21 18l-4-4a2 2 0 0 0-2.8 0l-5.2 5h12z"/>
+                  </svg>
+
+                  <h4>
+                    Image
+                  </h4>
+
+                  <button
+                    className={styles['NewDocumentLeftSection__Controls_Pages_Current_Page_Add_Component_Button']}
+                    onClick={() => {
+                      let updatedPage = getComponent(activePage, 'image', null, null, null)
+                      updatedPage = addPageHistoryEntry(design.id, page.id, {
+                        ...updatedPage,
+                        currentComponentId,
+                        currentColumnId,
+                        currentColumnParentId,
+                        currentRowId,
+                      })
+
+                      setPage(updatedPage);
+                    }}
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                      <path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  </button>
+                </div>
+              </li>
+            </>
           )
         }
 
         {
-          (currentPage?.autoLayout && (currentColumnId || currentRowId)) && (
-            <li>
-              <div className={styles['NewDocumentLeftSection__Controls_Pages_Current_Page_Properties_Single_Column']}>
-                <select onChange={(e) => {
-                  setDoc(
-                    getComponent(doc, currentPageIndex, e.target.value, currentRowId, currentColumnId, currentColumnParentId)
-                  )
-                }} value='select'>
-                  <option value='select'>Add component</option>
-                  <option value="line">Line</option>
-                  <option value="circle">Circle</option>
-                  <option value="rectangle">Rectangle</option>
-                  <option value="text">Text</option>
-                  <option value="image">Image</option>
-                </select>
-              </div>
-            </li>
+          (activePage?.autoLayout && (currentColumnId || currentRowId)) && (
+            <>
+              <li>
+                <h3>Design Components</h3>
+              </li>
+
+              <li>
+                <div className={styles['NewDocumentLeftSection__Controls_Pages_Current_Page_Properties_Three_Column']}>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="12" y1="4" x2="12" y2="20"/>
+                    <polyline points="8 8 12 4 16 8"/>
+                    <polyline points="8 16 12 20 16 16"/>
+                  </svg>
+
+                  <h4>
+                    Circle
+                  </h4>
+
+                  <button
+                    className={styles['NewDocumentLeftSection__Controls_Pages_Current_Page_Add_Component_Button']}
+                    onClick={() => {
+                      let updatedPage = getComponent(activePage, 'circle', currentRowId, currentColumnId, currentColumnParentId)
+                      updatedPage = addPageHistoryEntry(design.id, page.id, {
+                        ...updatedPage,
+                        currentComponentId,
+                        currentColumnId,
+                        currentColumnParentId,
+                        currentRowId,
+                      })
+
+                      setPage(updatedPage);
+                    }}
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                      <path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  </button>
+                </div>
+              </li>
+
+              <li>
+                <div className={styles['NewDocumentLeftSection__Controls_Pages_Current_Page_Properties_Three_Column']}>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="12" y1="4" x2="12" y2="20"/>
+                    <polyline points="8 8 12 4 16 8"/>
+                    <polyline points="8 16 12 20 16 16"/>
+                  </svg>
+
+                  <h4>
+                    Line
+                  </h4>
+
+                  <button
+                    className={styles['NewDocumentLeftSection__Controls_Pages_Current_Page_Add_Component_Button']}
+                    onClick={() => {
+                      let updatedPage = getComponent(activePage, 'line', currentRowId, currentColumnId, currentColumnParentId)
+                      updatedPage = addPageHistoryEntry(design.id, page.id, {
+                        ...updatedPage,
+                        currentComponentId,
+                        currentColumnId,
+                        currentColumnParentId,
+                        currentRowId,
+                      })
+
+                      setPage(updatedPage);
+                    }}
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                      <path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  </button>
+                </div>
+              </li>
+
+              <li>
+                <div className={styles['NewDocumentLeftSection__Controls_Pages_Current_Page_Properties_Three_Column']}>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="12" y1="4" x2="12" y2="20"/>
+                    <polyline points="8 8 12 4 16 8"/>
+                    <polyline points="8 16 12 20 16 16"/>
+                  </svg>
+
+                  <h4>
+                    Rectangle
+                  </h4>
+
+                  <button
+                    className={styles['NewDocumentLeftSection__Controls_Pages_Current_Page_Add_Component_Button']}
+                    onClick={() => {
+                      let updatedPage = getComponent(activePage, 'rectangle', currentRowId, currentColumnId, currentColumnParentId)
+                      updatedPage = addPageHistoryEntry(design.id, page.id, {
+                        ...updatedPage,
+                        currentComponentId,
+                        currentColumnId,
+                        currentColumnParentId,
+                        currentRowId,
+                      })
+
+                      setPage(updatedPage);
+                    }}
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                      <path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  </button>
+                </div>
+              </li>
+
+              <li>
+                <div className={styles['NewDocumentLeftSection__Controls_Pages_Current_Page_Properties_Three_Column']}>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="12" y1="4" x2="12" y2="20"/>
+                    <polyline points="8 8 12 4 16 8"/>
+                    <polyline points="8 16 12 20 16 16"/>
+                  </svg>
+
+                  <h4>
+                    Text
+                  </h4>
+
+                  <button
+                    className={styles['NewDocumentLeftSection__Controls_Pages_Current_Page_Add_Component_Button']}
+                    onClick={() => {
+                      let updatedPage = getComponent(activePage, 'text', currentRowId, currentColumnId, currentColumnParentId)
+                      updatedPage = addPageHistoryEntry(design.id, page.id, {
+                        ...updatedPage,
+                        currentComponentId,
+                        currentColumnId,
+                        currentColumnParentId,
+                        currentRowId,
+                      })
+
+                      setPage(updatedPage);
+                    }}
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                      <path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  </button>
+                </div>
+              </li>
+
+              <li>
+                <div className={styles['NewDocumentLeftSection__Controls_Pages_Current_Page_Properties_Three_Column']}>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="12" y1="4" x2="12" y2="20"/>
+                    <polyline points="8 8 12 4 16 8"/>
+                    <polyline points="8 16 12 20 16 16"/>
+                  </svg>
+
+                  <h4>
+                    Image
+                  </h4>
+
+                  <button
+                    className={styles['NewDocumentLeftSection__Controls_Pages_Current_Page_Add_Component_Button']}
+                    onClick={() => {
+                      let updatedPage = getComponent(activePage, 'image', currentRowId, currentColumnId, currentColumnParentId)
+                      updatedPage = addPageHistoryEntry(design.id, page.id, {
+                        ...updatedPage,
+                        currentComponentId,
+                        currentColumnId,
+                        currentColumnParentId,
+                        currentRowId,
+                      })
+
+                      setPage(updatedPage);
+                    }}
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                      <path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  </button>
+                </div>
+              </li>
+            </>
           )
         }
-
-
-
-        <li>
-          <button
-            className={styles['NewDocumentLeftSection__Controls_Pages_Current_Page_Properties_Button']}
-            onClick={() => {
-              documentPageRef.current.requestFullscreen()
-            }}
-          >
-            <div />
-            Toggle fullscreen
-          </button>
-
-          <div />
-        </li>
       </ul>
     </ul>
   )
