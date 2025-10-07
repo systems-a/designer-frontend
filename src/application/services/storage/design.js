@@ -19,14 +19,14 @@ const addDesignHistoryEntry = (designId, entry) => {
     // currentHistoryEntryIndex: design.currentHistoryEntryIndex + 1,
   };
 
-  window[designId] = JSON.stringify(updatedDesign);
+  localStorage.setItem(designId, JSON.stringify(updatedDesign));
   return updatedDesign;
 }
 
 const createDesign = () => {
   const newDesignId = UUIDv4();
 
-  window[newDesignId] = JSON.stringify({
+  localStorage.setItem(newDesignId, JSON.stringify({
     currentHistoryEntryIndex: 0,
     history: [
       {
@@ -38,26 +38,26 @@ const createDesign = () => {
     ],
     id: newDesignId,
     currentPageNumber: 0,
-  });
+  }));
 
   let designIds = []
-  if (window['designIds']) designIds = JSON.parse(window['designIds']);
+  if (localStorage.getItem('designIds')) designIds = JSON.parse(localStorage.getItem('designIds'));
   designIds.push(newDesignId);
-  window['designIds'] = JSON.stringify(designIds);
+  localStorage.setItem('designIds', JSON.stringify(designIds));
 
   return newDesignId;
 }
 
 const getDesign = (designId) => {
-  if (!window[designId]) return null;
-  const design = JSON.parse(window[designId])
+  if (!localStorage.getItem(designId)) return null;
+  const design = JSON.parse(localStorage.getItem(designId));
 
   return design;
 }
 
 const indexDesigns = () => {
-  if (!window['designIds']) return null;
-  const designs = JSON.parse(window['designIds']);
+  if (!localStorage.getItem('designIds')) return null;
+  const designs = JSON.parse(localStorage.getItem('designIds'));
   return designs;
 }
 
@@ -79,7 +79,7 @@ const updateDesign = (designId, updatedProperties) => {
     ...updatedProperties
   };
 
-  window[designId] = JSON.stringify(updatedDesign);
+  localStorage.setItem(designId, JSON.stringify(updatedDesign));
 }
 
 export {

@@ -20,7 +20,7 @@ const addPageHistoryEntry = (designId, pageId, entry) => {
     // currentHistoryEntryIndex: page.currentHistoryEntryIndex + 1,
   };
 
-  window[pageId] = JSON.stringify(updatedPage);
+  localStorage.setItem(pageId, JSON.stringify(updatedPage));
   return updatedPage;
 }
 
@@ -32,15 +32,9 @@ const createNewPage = (designId) => {
   const newPageTitle = `Page ${design.currentPageNumber + 1}`;
   const newPage = getPageProperties(newPageTitle, design.currentPageNumber + 1);
 
-  window[newPageId] = JSON.stringify({
-    currentHistoryEntryIndex: 0,
-    history: [
-      newPage,
-    ],
-    id: newPageId,
-  })
+  localStorage.setItem(newPageId, JSON.stringify(newPage));
 
-  window[designId] = JSON.stringify({
+  localStorage.setItem(designId, JSON.stringify({
     ...design,
     currentHistoryEntryIndex: design.currentHistoryEntryIndex + 1,
     history: [
@@ -59,13 +53,13 @@ const createNewPage = (designId) => {
       },
     ],
     currentPageNumber: design.currentPageNumber + 1,
-  })
+  }))
 
   return newPageId;
 }
 
 const deletePage = (designId, pageId) => {
-  const design = JSON.parse(window[designId]);
+  const design = JSON.parse(localStorage.getItem(designId));
   if (!design) return null;
 
   const updatedPages = design.history[design.currentHistoryEntryIndex].pages.filter((entry) => entry.id !== pageId);
@@ -103,14 +97,14 @@ const deletePage = (designId, pageId) => {
       },
     ],
   }
-  window[designId] = JSON.stringify(updatedDesign)
+  localStorage.setItem(designId, JSON.stringify(updatedDesign));
 
   return { updatedDesign, updatedCurrentPageId };
 }
 
 const getPage = (designId, pageId) => {
-  if (!window[designId]) return null;
-  const design = JSON.parse(window[designId]);
+  if (!localStorage.getItem(designId)) return null;
+  const design = JSON.parse(localStorage.getItem(designId));
   if (!design) return null;
 
   const designHistory = design.history;
@@ -118,12 +112,11 @@ const getPage = (designId, pageId) => {
   const pages = activeDesign.pages;
 
   if (!pages.find(page => page.id === pageId)) return null;
-  return JSON.parse(window[pageId]);
+  return JSON.parse(localStorage.getItem(pageId));
 }
 
 const redoPageChanges = (designId, pageId) => {
   const page = getPage(designId, pageId);
-  console.log('Old', page.currentHistoryEntryIndex);
   if (!page) return null;
 
   const updatedPage = {
@@ -133,9 +126,7 @@ const redoPageChanges = (designId, pageId) => {
         page.currentHistoryEntryIndex + 1 : page.history.length - 1
   };
 
-  console.log('New', updatedPage.currentHistoryEntryIndex);
-
-  window[pageId] = JSON.stringify(updatedPage);
+  localStorage.setItem(pageId, JSON.stringify(updatedPage));
   return updatedPage;
 }
 
@@ -148,9 +139,7 @@ const undoPageChanges = (designId, pageId) => {
     currentHistoryEntryIndex: page.currentHistoryEntryIndex > 0 ? page.currentHistoryEntryIndex - 1 : 0,
   };
 
-  console.log(updatedPage)
-
-  window[pageId] = JSON.stringify(updatedPage);
+  localStorage.setItem(pageId, JSON.stringify(updatedPage));
   return updatedPage;
 }
 
