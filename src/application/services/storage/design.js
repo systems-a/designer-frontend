@@ -8,14 +8,15 @@ const addDesignHistoryEntry = (designId, entry) => {
   const updatedDesign = {
     ...design,
     history: [
-      ...design.history.slice(0, design.currentHistoryEntryIndex + 1),
+      // ...design.history.slice(0, design.currentHistoryEntryIndex + 1),
       {
+        ...design.history[0],
         ...design.history[design.currentHistoryEntryIndex],
         id: UUIDv4(),
         ...entry,
       }
     ],
-    currentHistoryEntryIndex: design.currentHistoryEntryIndex,
+    currentHistoryEntryIndex: 0,
     // currentHistoryEntryIndex: design.currentHistoryEntryIndex + 1,
   };
 

@@ -25,14 +25,20 @@ const addPageHistoryEntry = (designId, pageId, entry) => {
 }
 
 const createNewPage = (designId) => {
-  const design = JSON.parse(window[designId]);
+  const design = JSON.parse(localStorage.getItem(designId));
   if (!design) return null;
 
   const newPageId = UUIDv4();
   const newPageTitle = `Page ${design.currentPageNumber + 1}`;
   const newPage = getPageProperties(newPageTitle, design.currentPageNumber + 1);
 
-  localStorage.setItem(newPageId, JSON.stringify(newPage));
+  localStorage.setItem(newPageId, JSON.stringify({
+    currentHistoryEntryIndex: 0,
+    history: [
+      newPage,
+    ],
+    id: newPageId,
+  }));
 
   localStorage.setItem(designId, JSON.stringify({
     ...design,
@@ -112,6 +118,7 @@ const getPage = (designId, pageId) => {
   const pages = activeDesign.pages;
 
   if (!pages.find(page => page.id === pageId)) return null;
+
   return JSON.parse(localStorage.getItem(pageId));
 }
 
