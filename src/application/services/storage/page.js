@@ -8,14 +8,16 @@ const addPageHistoryEntry = (designId, pageId, entry) => {
   const updatedPage = {
     ...page,
     history: [
-      ...page.history.slice(0, page.currentHistoryEntryIndex + 1),
+      // ...page.history.slice(0, page.currentHistoryEntryIndex + 1),
       {
+        ...page.history[0],
         ...page.history[page.currentHistoryEntryIndex],
         id: UUIDv4(),
         ...entry,
       }
     ],
-    currentHistoryEntryIndex: page.currentHistoryEntryIndex + 1,
+    currentHistoryEntryIndex: 0,
+    // currentHistoryEntryIndex: page.currentHistoryEntryIndex + 1,
   };
 
   window[pageId] = JSON.stringify(updatedPage);

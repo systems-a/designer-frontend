@@ -15,7 +15,8 @@ const addDesignHistoryEntry = (designId, entry) => {
         ...entry,
       }
     ],
-    currentHistoryEntryIndex: design.currentHistoryEntryIndex + 1,
+    currentHistoryEntryIndex: design.currentHistoryEntryIndex,
+    // currentHistoryEntryIndex: design.currentHistoryEntryIndex + 1,
   };
 
   window[designId] = JSON.stringify(updatedDesign);

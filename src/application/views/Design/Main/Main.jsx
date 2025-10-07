@@ -230,8 +230,6 @@ function NewDesignMainSection({
   const onComponentFocus = (e, componentId, columnId, rowId) => {
     e.stopPropagation();
 
-    console.log(page.currentHistoryEntryIndex, page.history.length);
-
     if (page.currentHistoryEntryIndex + 1 == page.history.length) {
       const updatedPage = addPageHistoryEntry(design.id, page.id, {
         currentComponentId: componentId,
@@ -640,7 +638,7 @@ function NewDesignMainSection({
         );
 
       updatedPage = addPageHistoryEntry(design.id, page.id, {
-        ...page,
+        ...updatedPage,
         currentComponentId,
         currentColumnId,
         currentColumnParentId,
@@ -649,6 +647,12 @@ function NewDesignMainSection({
 
       setPage(updatedPage);
     }
+  }
+
+  const onPageMouseUp = () => {
+    setSelectedComponentId(null);
+    setSelectedComponentRowId(null);
+    setSelectedComponentColumnId(null);
   }
 
   const onRowKeydown = (e, rowId, columnId, currentComponentId) => {
@@ -814,6 +818,7 @@ function NewDesignMainSection({
           id="page"
           onKeyDown={onPageKeyDown}
           onMouseMove={onPageMouseMove}
+          onMouseUp={onPageMouseUp}
           tabIndex={0}
           style={{
             gap: activePage.gap,
