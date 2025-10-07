@@ -17,24 +17,20 @@
 }
 
 :root {
-  --box-shadow-1: 0 4 6 0 rgba(0, 0, 0, 0.1);
-  --box-shadow-2: 0 10 15 0 rgba(0, 0, 0, 0.1);
-
-  --positive-currency-color: #1976d2;
-  --primary-color: #1976d2;
   --primary-color: #333;
-  --border-color: #e7e1d555;
   --secondary-color: #e7e1d5;
   --tertiary-color: #16463f;
   --accent-color: #eac1c6;
-  --color-4: #6d7179;
-
-  --log-out: #f76c6c;
   --danger-color: #ff4d4f;
 
-  --page-bg: #eeeeee;
   --heading-color: #111827;
   --text-color: #4b5563;
+  --border-color: #e7e1d555;
+
+  --page-bg: #eeeeee;
+
+  --box-shadow-1: 0 4 6 0 rgba(0, 0, 0, 0.1);
+  --box-shadow-2: 0 10 15 0 rgba(0, 0, 0, 0.1);
 
   --header-height: 3.5em;
 
